@@ -1,0 +1,74 @@
+body {
+    overflow-y: hidden;
+
+}
+
+.container {
+    background-color: #EFF4F9;
+    max-width: 320px;
+    height: 75vh;
+    margin: 100px auto;
+    border-radius: 8px;
+    padding: 12px;
+}
+
+.title {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 70px;
+}
+
+.h1 {
+    font-size: 20px;
+    font-weight: normal;
+}
+
+.result {
+    font-size: 36px;
+    text-align: right;
+    margin-bottom: 12px;
+}
+
+.mButtons {
+    display: flex;
+    justify-content: space-between;
+}
+
+.mButtons button {
+    width: 40px;
+    background-color: transparent;
+    border: 0;
+    padding: 2px;
+}
+
+.mButtons button:hover {
+    background-color: #E8EAF0;
+    border-radius: 4px;
+}
+
+.buttonsContainer {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-rows: repeat(6, 50px);
+    gap: 4px;
+    margin-top: 12px;
+}
+
+.buttonsContainer button {
+    border: 0;
+    border-radius: 4px;
+}
+
+.buttonsContainer button:not(.number) {
+    background-color: #F4F6FA;
+}
+
+.number {
+    background-color: white;
+}
+
+.mosavi {
+    background-color: #0067C0 !important;
+    color: white;
+}
