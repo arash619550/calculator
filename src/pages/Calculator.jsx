@@ -1,174 +1,192 @@
 import styles from '../styles/calculator.module.css'
 import icon from '../assets/images/icon.png'
 import { useState } from 'react'
+
 export default function Calculator() {
     const [display, setDisplay] = useState("0")
-    const [isNewNumber, setIsNewNumber] = useState(false)
+    const [previousValue, setPreviousValue] = useState(null)
+    const [operation, setOperation] = useState(null)
+    const [waitingForOperand, setWaitingForOperand] = useState(false)
     const [memory, setMemory] = useState(0)
-    const handleNumClick = (e) => {
-        const value = e.target.innerText
-        if (display === "0" || isNewNumber) {
-            setDisplay(value)
+
+    // --- اعداد ---
+    const handleNumClick = (num) => {
+        if (waitingForOperand) {
+            setDisplay(num)
+            setWaitingForOperand(false)
         } else {
-            setDisplay(display + value)
+            setDisplay(display === "0" ? num : display + num)
         }
-        setIsNewNumber(false)
     }
-    const handleOperatorClick = (operator) => {
-        const lastChar = display[display.length - 1]
-        if (["+", "-", "*", "/"].includes(lastChar)) return
-        setDisplay(display + operator)
-        setIsNewNumber(true)
+
+    // --- عملگرها ---
+    const handleOperatorClick = (nextOperation) => {
+        const inputValue = parseFloat(display)
+
+        if (previousValue === null) {
+            setPreviousValue(inputValue)
+        } else if (operation) {
+            const currentValue = previousValue || 0
+            const newValue = calculate(currentValue, inputValue, operation)
+
+            setPreviousValue(newValue)
+            setDisplay(String(newValue))
+        }
+
+        setWaitingForOperand(true)
+        setOperation(nextOperation)
     }
+
+    // --- محاسبات ---
+    const calculate = (firstValue, secondValue, operation) => {
+        switch (operation) {
+            case '+':
+                return firstValue + secondValue
+            case '-':
+                return firstValue - secondValue
+            case '*':
+                return firstValue * secondValue
+            case '/':
+                return firstValue / secondValue
+            default:
+                return secondValue
+        }
+    }
+
+    // --- مساوی ---
+    const handleEqual = () => {
+        const inputValue = parseFloat(display)
+
+        if (previousValue !== null && operation) {
+            const result = calculate(previousValue, inputValue, operation)
+            setDisplay(String(result))
+            setPreviousValue(null)
+            setOperation(null)
+            setWaitingForOperand(true)
+        }
+    }
+
+    // --- سایر توابع ---
     const handleClear = () => {
         setDisplay("0")
-        setIsNewNumber(false)
+        setPreviousValue(null)
+        setOperation(null)
+        setWaitingForOperand(false)
     }
+
     const handleDelete = () => {
         if (display.length === 1) {
             setDisplay("0")
         } else {
             setDisplay(display.slice(0, -1))
         }
-        setIsNewNumber(false)
     }
+
     const handleCE = () => {
-        const regex = /[+\-*/](?!.*[+\-*/])/
-        const match = display.match(regex)
-        if (match) {
-            setDisplay(display.slice(0, match.index + 1))
-        } else {
-            setDisplay("0")
-        }
-        setIsNewNumber(false)
+        setDisplay("0")
+        setWaitingForOperand(false)
     }
+
     const handlePercent = () => {
-        try {
-            setDisplay((eval(display) * 0.01).toString())
-        } catch {
-            setDisplay("0")
-        }
+        const currentValue = parseFloat(display)
+        setDisplay(String(currentValue * 0.01))
+        setWaitingForOperand(true)
     }
+
     const handleToggleSign = () => {
-        try {
-            const value = eval(display)
-            setDisplay((-value).toString())
-        } catch {
-            setDisplay("0")
-        }
+        setDisplay(String(-parseFloat(display)))
     }
+
     const handleDot = () => {
-        const lastNumber = display.split(/[\+\-\*\/]/).pop()
-        if (!lastNumber.includes(".")) {
+        if (waitingForOperand) {
+            setDisplay("0.")
+            setWaitingForOperand(false)
+        } else if (!display.includes(".")) {
             setDisplay(display + ".")
-            setIsNewNumber(false)
         }
     }
-    const handleEqual = () => {
-        const lastChar = display[display.length - 1]
-        if (["+", "-", "*", "/"].includes(lastChar)) return
-        try {
-            setDisplay(eval(display).toString())
-        } catch {
-            setDisplay("0")
-        }
-    }
+
     const handleInverse = () => {
-        try {
-            const value = eval(display)
-            if (value === 0) {
-                setDisplay("خطا")
-            } else {
-                setDisplay((1 / value).toString())
-            }
-        } catch {
-            setDisplay("0")
+        const currentValue = parseFloat(display)
+        if (currentValue === 0) {
+            setDisplay("خطا")
+        } else {
+            setDisplay(String(1 / currentValue))
         }
+        setWaitingForOperand(true)
     }
+
     const handleSquare = () => {
-        try {
-            const value = eval(display)
-            setDisplay((value * value).toString())
-        } catch {
-            setDisplay("0")
-        }
+        const currentValue = parseFloat(display)
+        setDisplay(String(currentValue * currentValue))
+        setWaitingForOperand(true)
     }
+
     const handleSqrt = () => {
-        try {
-            const value = eval(display)
-            if (value < 0) {
-                setDisplay("خطا")
-            } else {
-                setDisplay(Math.sqrt(value).toString())
-            }
-        } catch {
-            setDisplay("0")
+        const currentValue = parseFloat(display)
+        if (currentValue < 0) {
+            setDisplay("خطا")
+        } else {
+            setDisplay(String(Math.sqrt(currentValue)))
         }
+        setWaitingForOperand(true)
     }
-    const handleMC = () => {
-        setMemory(0)
-    }
-    const handleMR = () => {
-        setDisplay(memory.toString())
-        setIsNewNumber(true)
-    }
-    const handleMPlus = () => {
-        try {
-            const value = eval(display)
-            setMemory(memory + value)
-            setIsNewNumber(true)
-        } catch { }
-    }
-    const handleMMinus = () => {
-        try {
-            const value = eval(display)
-            setMemory(memory - value)
-            setIsNewNumber(true)
-        } catch { }
-    }
+
+    // --- حافظه ---
+    const handleMC = () => setMemory(0)
+    const handleMR = () => { setDisplay(String(memory)); setWaitingForOperand(true) }
+    const handleMPlus = () => { setMemory(memory + parseFloat(display)); setWaitingForOperand(true) }
+    const handleMMinus = () => { setMemory(memory - parseFloat(display)); setWaitingForOperand(true) }
+
     return (
-        <>
-            <div className={styles.container}>
-                <div className={styles.title}>
-                    <img src={icon} alt="icon" width={24} height={24} />
-                    <h1 className={styles.h1}>calculator</h1>
-                </div>
-                <h2 className={styles.result}>{display}</h2>
-                <div className={styles.mButtons}>
-                    <button onClick={handleMC}>MC</button>
-                    <button onClick={handleMR}>MR</button>
-                    <button onClick={handleMPlus}>M+</button>
-                    <button onClick={handleMMinus}>M-</button>
-                </div>
-                <div className={styles.buttonsContainer}>
-                    <button onClick={handlePercent}>%</button>
-                    <button onClick={handleCE}>CE</button>
-                    <button onClick={handleClear}>C</button>
-                    <button onClick={handleDelete}>back</button>
-                    <button onClick={handleInverse}>1/x</button>
-                    <button onClick={handleSquare}>x<sup>2</sup></button>
-                    <button onClick={handleSqrt}>√</button>
-                    <button onClick={() => handleOperatorClick("/")}>/</button>
-                    <button className={styles.number} onClick={handleNumClick}>7</button>
-                    <button className={styles.number} onClick={handleNumClick}>8</button>
-                    <button className={styles.number} onClick={handleNumClick}>9</button>
-                    <button onClick={() => handleOperatorClick("*")}>*</button>
-                    <button className={styles.number} onClick={handleNumClick}>4</button>
-                    <button className={styles.number} onClick={handleNumClick}>5</button>
-                    <button className={styles.number} onClick={handleNumClick}>6</button>
-                    <button onClick={() => handleOperatorClick("-")}>-</button>
-                    <button className={styles.number} onClick={handleNumClick}>1</button>
-                    <button className={styles.number} onClick={handleNumClick}>2</button>
-                    <button className={styles.number} onClick={handleNumClick}>3</button>
-                    <button onClick={() => handleOperatorClick("+")}>+</button>
-                    <button className={styles.number} onClick={handleToggleSign}>
-                        <sup>+</sup>/<sub>-</sub>
-                    </button>
-                    <button className={styles.number} onClick={handleNumClick}>0</button>
-                    <button className={styles.number} onClick={handleDot}>.</button>
-                    <button className={styles.mosavi} onClick={handleEqual}>=</button>
-                </div>
+        <div className={styles.container}>
+            <div className={styles.title}>
+                <img src={icon} alt="icon" width={24} height={24} />
+                <h1 className={styles.h1}>calculator</h1>
             </div>
-        </>
+
+            <h2 className={styles.result}>{display}</h2>
+
+            <div className={styles.mButtons}>
+                <button onClick={handleMC}>MC</button>
+                <button onClick={handleMR}>MR</button>
+                <button onClick={handleMPlus}>M+</button>
+                <button onClick={handleMMinus}>M-</button>
+            </div>
+
+            <div className={styles.buttonsContainer}>
+                <button onClick={handlePercent}>%</button>
+                <button onClick={handleCE}>CE</button>
+                <button onClick={handleClear}>C</button>
+                <button onClick={handleDelete}>back</button>
+
+                <button onClick={handleInverse}>1/x</button>
+                <button onClick={handleSquare}>x<sup>2</sup></button>
+                <button onClick={handleSqrt}>√</button>
+                <button onClick={() => handleOperatorClick("/")}>/</button>
+
+                <button className={styles.number} onClick={() => handleNumClick("7")}>7</button>
+                <button className={styles.number} onClick={() => handleNumClick("8")}>8</button>
+                <button className={styles.number} onClick={() => handleNumClick("9")}>9</button>
+                <button onClick={() => handleOperatorClick("*")}>*</button>
+
+                <button className={styles.number} onClick={() => handleNumClick("4")}>4</button>
+                <button className={styles.number} onClick={() => handleNumClick("5")}>5</button>
+                <button className={styles.number} onClick={() => handleNumClick("6")}>6</button>
+                <button onClick={() => handleOperatorClick("-")}>-</button>
+
+                <button className={styles.number} onClick={() => handleNumClick("1")}>1</button>
+                <button className={styles.number} onClick={() => handleNumClick("2")}>2</button>
+                <button className={styles.number} onClick={() => handleNumClick("3")}>3</button>
+                <button onClick={() => handleOperatorClick("+")}>+</button>
+
+                <button className={styles.number} onClick={handleToggleSign}>
+                    <sup>+</sup>/<sub>-</sub>
+                </button>
+                <button className={styles.number} onClick={() => handleNumClick("0")}>0</button>
+                <button className={styles.number} onClick={handleDot}>.</button>
+                <button className={styles.mosavi} onClick={handleEqual}>=</button>
+            </div>
+        </div>
     )
 }
